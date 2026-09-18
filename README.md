@@ -111,7 +111,7 @@ The oldest cohort (scaled 0.72, approx. 65+) averages **0.483 visits** — 2.4×
 ---
 
 ## 🖥️ Dashboard
-
+👉 **[View Interactive Dashboard](https://khushi-4817.github.io/Healthcare-Analytics-for-Doctor-Visits-Project/dashboard.html)**
 Open [`dashboard.html`](dashboard.html) in any modern browser.
 
 **Contains 19 interactive charts across 5 themed sections:**
