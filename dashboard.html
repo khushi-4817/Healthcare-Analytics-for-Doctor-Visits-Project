@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Healthcare Analytics – Doctor Visits Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%); padding: 28px 40px 22px; border-bottom: 1px solid #2d3748; }
+  header h1 { font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  header p  { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+  header .badge { display:inline-block; background:#3b82f6; color:#fff; font-size:0.72rem; font-weight:600; padding:2px 10px; border-radius:20px; margin-left:10px; vertical-align:middle; }
+
+  .container { max-width: 1440px; margin: 0 auto; padding: 28px 24px 48px; }
+
+  /* Section labels */
+  .section-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.2px; color: #3b82f6; font-weight: 700; margin: 36px 0 14px; padding-left: 2px; border-left: 3px solid #3b82f6; padding-left: 10px; }
+
+  /* Story banner */
+  .story-banner { background: linear-gradient(90deg, #1e293b 0%, #1a1f2e 100%); border: 1px solid #2d3748; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; font-size: 0.83rem; color: #cbd5e1; line-height: 1.65; }
+  .story-banner strong { color: #f0f4ff; }
+
+  /* KPI row */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 10px; }
+  .kpi-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 12px; padding: 20px 18px; position: relative; overflow: hidden; }
+  .kpi-card::after { content:''; position:absolute; top:0; left:0; width:3px; height:100%; }
+  .kpi-card.blue::after   { background:#60a5fa; } .kpi-card.green::after  { background:#34d399; }
+  .kpi-card.amber::after  { background:#fbbf24; } .kpi-card.red::after    { background:#f87171; }
+  .kpi-card.purple::after { background:#a78bfa; } .kpi-card.teal::after   { background:#2dd4bf; }
+  .kpi-card.orange::after { background:#fb923c; } .kpi-card.pink::after   { background:#f472b6; }
+  .kpi-card .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 6px; }
+  .kpi-card .value { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+  .kpi-card .sub   { font-size: 0.75rem; color: #64748b; margin-top: 5px; }
+  .kpi-card.blue .value   { color: #60a5fa; } .kpi-card.green .value  { color: #34d399; }
+  .kpi-card.amber .value  { color: #fbbf24; } .kpi-card.red .value    { color: #f87171; }
+  .kpi-card.purple .value { color: #a78bfa; } .kpi-card.teal .value   { color: #2dd4bf; }
+  .kpi-card.orange .value { color: #fb923c; } .kpi-card.pink .value   { color: #f472b6; }
+
+  /* Chart grid */
+  .charts-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+  .chart-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 12px; padding: 18px 18px 12px; }
+  .chart-card .card-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
+  .chart-card .card-story { font-size: 0.76rem; color: #64748b; line-height: 1.5; margin-bottom: 10px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+  .chart-card .card-story span { color: #93c5fd; font-weight: 600; }
+  .chart-card .chart-area { width: 100%; }
+
+  .col-3  { grid-column: span 3; }
+  .col-4  { grid-column: span 4; }
+  .col-5  { grid-column: span 5; }
+  .col-6  { grid-column: span 6; }
+  .col-7  { grid-column: span 7; }
+  .col-8  { grid-column: span 8; }
+  .col-9  { grid-column: span 9; }
+  .col-12 { grid-column: span 12; }
+
+  /* Insight strip */
+  .insight-strip { margin-top: 28px; background: #1a1f2e; border: 1px solid #2d3748; border-radius: 12px; padding: 22px 24px; }
+  .insight-strip h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; margin-bottom: 16px; font-weight: 600; }
+  .insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .insight-item { background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 14px 16px; }
+  .insight-item .ititle { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; margin-bottom: 5px; }
+  .insight-item .itext  { font-size: 0.78rem; color: #94a3b8; line-height: 1.6; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; }
+  .dot-blue{background:#60a5fa} .dot-green{background:#34d399} .dot-amber{background:#fbbf24}
+  .dot-red{background:#f87171}  .dot-purple{background:#a78bfa} .dot-teal{background:#2dd4bf}
+  .dot-orange{background:#fb923c} .dot-pink{background:#f472b6}
+
+  @media (max-width: 960px) {
+    .col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9 { grid-column: span 12; }
+  }
+  footer { text-align:center; color:#4b5563; font-size:0.72rem; padding:22px; border-top:1px solid #1e293b; margin-top:14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Healthcare Analytics — Doctor Visits <span class="badge">n = 5,190</span></h1>
+  <p>Comprehensive patient-level analysis · Australian Health Survey Dataset · 13 variables</p>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 1 — OVERVIEW
+═══════════════════════════════════════════════ -->
+<div class="section-label">01 · Overview &amp; Population Snapshot</div>
+<div class="story-banner">
+  This dataset captures <strong>5,190 Australian patients</strong> surveyed about their doctor visit behaviour, demographics, health status, and insurance coverage.
+  The central finding is immediately striking: <strong>nearly 4 in 5 patients recorded zero doctor visits</strong> in the reference period, producing a heavily zero-inflated count distribution
+  that demands specialised modelling (zero-inflated Poisson or negative-binomial regression).
+  The analysis that follows peels back every layer — from who visits most, to why, to what systemic factors drive utilisation.
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card blue"><div class="label">Total Patients</div><div class="value">5,190</div><div class="sub">Survey respondents</div></div>
+  <div class="kpi-card amber"><div class="label">Avg Visits / Patient</div><div class="value">0.302</div><div class="sub">Max: 9 · Median: 0</div></div>
+  <div class="kpi-card red"><div class="label">Zero-Visit Rate</div><div class="value">79.8%</div><div class="sub">4,141 patients</div></div>
+  <div class="kpi-card green"><div class="label">Private Insurance</div><div class="value">44.3%</div><div class="sub">2,298 patients</div></div>
+  <div class="kpi-card purple"><div class="label">Non-Limiting Chronic</div><div class="value">40.3%</div><div class="sub">nchronic = yes</div></div>
+  <div class="kpi-card teal"><div class="label">Limiting Chronic</div><div class="value">11.7%</div><div class="sub">lchronic = yes</div></div>
+  <div class="kpi-card orange"><div class="label">Free Repat Cover</div><div class="value">21.0%</div><div class="sub">1,091 patients</div></div>
+  <div class="kpi-card pink"><div class="label">Free Poor Cover</div><div class="value">4.3%</div><div class="sub">222 patients</div></div>
+</div>
+
+<div class="charts-grid" style="margin-top:18px;">
+
+  <!-- Chart 1: Visits Distribution -->
+  <div class="chart-card col-5">
+    <div class="card-title">1 · Doctor Visits Distribution</div>
+    <div class="card-story">The distribution is <span>severely right-skewed</span>. 79.8% of patients have 0 visits; only 782 (15%) visited once. Frequencies drop sharply thereafter — a textbook zero-inflated count pattern.</div>
+    <div class="chart-area" id="c-visits" style="height:260px;"></div>
+  </div>
+
+  <!-- Chart 2: CDF -->
+  <div class="chart-card col-4">
+    <div class="card-title">2 · Cumulative Visit % (CDF)</div>
+    <div class="card-story"><span>94.9%</span> of patients have ≤1 visit and <span>98.2%</span> have ≤2. This cumulative view confirms that "heavy users" (3+ visits) are a very small but high-cost minority.</div>
+    <div class="chart-area" id="c-cdf" style="height:260px;"></div>
+  </div>
+
+  <!-- Chart 3: Gender Donut -->
+  <div class="chart-card col-3">
+    <div class="card-title">3 · Gender Split</div>
+    <div class="card-story">The sample is <span>52% female</span>, reflecting typical survey demographics and consistent with higher female healthcare engagement.</div>
+    <div class="chart-area" id="c-gender" style="height:260px;"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 2 — HEALTH BURDEN
+═══════════════════════════════════════════════ -->
+<div class="section-label">02 · Health Burden — Illness, Chronic Conditions &amp; Health Score</div>
+<div class="story-banner">
+  Health burden is the <strong>single most powerful predictor</strong> of doctor visits in this dataset. Patients with severe illness (score 5) visit at a rate <strong>10× higher</strong> than those with no illness.
+  Chronic conditions — particularly <em>limiting</em> ones — dramatically amplify utilisation. The health score distribution reveals that most patients self-report good health (score 0),
+  yet even small deviations from perfect health correlate with measurably higher visit rates.
+</div>
+
+<div class="charts-grid">
+
+  <!-- Chart 4: Illness severity line -->
+  <div class="chart-card col-6">
+    <div class="card-title">4 · Avg Visits by Illness Severity</div>
+    <div class="card-story">A near-linear escalation: severity 0 → <span>0.079</span> visits; severity 5 → <span>0.814</span> visits. Each additional illness point raises visit probability by ~15 percentage points.</div>
+    <div class="chart-area" id="c-illness" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 5: % who visited by illness -->
+  <div class="chart-card col-6">
+    <div class="card-title">5 · % Patients Who Visited — by Illness Severity</div>
+    <div class="card-story">At severity 0, only <span>6.8%</span> of patients visited a doctor. By severity 5, that proportion rises to <span>41.9%</span> — a 6× increase in the probability of seeking care.</div>
+    <div class="chart-area" id="c-ill-pct" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 6: Chronic bar -->
+  <div class="chart-card col-6">
+    <div class="card-title">6 · Chronic Condition Impact on Avg Visits</div>
+    <div class="card-story">Limiting chronic conditions (lchronic) cause a <span>+130%</span> increase in visits over the baseline. Non-limiting chronic conditions still add a <span>+27%</span> uplift.</div>
+    <div class="chart-area" id="c-chronic" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 7: Health score distribution -->
+  <div class="chart-card col-6">
+    <div class="card-title">7 · Health Score Distribution (0 = Best Health)</div>
+    <div class="card-story"><span>58.3%</span> of patients score 0 (excellent health). Scores above 6 are rare (&lt;5%) but represent patients with <span>significantly elevated</span> visit rates and care complexity.</div>
+    <div class="chart-area" id="c-health" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 8: Health x Illness heatmap -->
+  <div class="chart-card col-12">
+    <div class="card-title">8 · Avg Visits Heatmap — Health Score Group × Illness Severity</div>
+    <div class="card-story">The interaction between health score and illness severity reveals <span>compounding risk</span>. Patients with both high health scores (poor health) and high illness severity average <span>0.852 visits</span> — the highest of any subgroup — while those with low health score and no illness barely exceed <span>0.129</span>.</div>
+    <div class="chart-area" id="c-heatmap" style="height:260px;"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 3 — DEMOGRAPHICS
+═══════════════════════════════════════════════ -->
+<div class="section-label">03 · Demographics — Gender, Age &amp; Income</div>
+<div class="story-banner">
+  Demographic factors paint a clear picture of <strong>structural disparities</strong> in healthcare access and need.
+  Women visit doctors <strong>53% more often</strong> than men. Older patients visit nearly <strong>twice as frequently</strong> as the youngest cohort.
+  Low-income patients visit <strong>78% more</strong> than high-income patients, despite likely having fewer financial resources to afford care —
+  suggesting unmet need is being driven by acute health necessity rather than discretionary utilisation.
+</div>
+
+<div class="charts-grid">
+
+  <!-- Chart 9: Gender visits bar -->
+  <div class="chart-card col-4">
+    <div class="card-title">9 · Avg Visits by Gender</div>
+    <div class="card-story">Females average <span>0.362</span> visits vs <span>0.236</span> for males — a <span>53% gap</span>. This aligns with global patterns of higher female healthcare-seeking behaviour.</div>
+    <div class="chart-area" id="c-gender-visits" style="height:260px;"></div>
+  </div>
+
+  <!-- Chart 10: Radar -->
+  <div class="chart-card col-4">
+    <div class="card-title">10 · Health Profile Radar — Male vs Female</div>
+    <div class="card-story">Female patients show <span>higher scores</span> across illness, health burden, reduced activity days, and visit rates. Males report higher income and are slightly younger on average.</div>
+    <div class="chart-area" id="c-radar" style="height:260px;"></div>
+  </div>
+
+  <!-- Chart 11: Gender x chronic -->
+  <div class="chart-card col-4">
+    <div class="card-title">11 · Avg Visits: Gender × Chronic Condition</div>
+    <div class="card-story">Female patients with limiting chronic conditions average <span>0.694</span> visits — the highest of any gender-chronic subgroup. Males without any chronic condition average just <span>0.159</span>.</div>
+    <div class="chart-area" id="c-gender-chronic" style="height:260px;"></div>
+  </div>
+
+  <!-- Chart 12: Age visits dual axis -->
+  <div class="chart-card col-8">
+    <div class="card-title">12 · Avg Visits &amp; Patient Count by Age Group</div>
+    <div class="card-story">Visit rates follow an <span>age-upward trend</span>: the oldest cohort (scaled 0.72, approx. 65+) averages <span>0.483 visits</span> — more than double the youngest groups. The dip at 0.47 may reflect a healthier mid-age subpopulation.</div>
+    <div class="chart-area" id="c-age" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 13: Income bracket -->
+  <div class="chart-card col-4">
+    <div class="card-title">13 · Visit Rate &amp; Avg Visits by Income</div>
+    <div class="card-story">Low-income patients are <span>63% more likely</span> to visit (25.6% vs 15.7%) and visit <span>78% more often</span> on average. A clear socioeconomic gradient in utilisation exists.</div>
+    <div class="chart-area" id="c-income" style="height:280px;"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 4 — INSURANCE
+═══════════════════════════════════════════════ -->
+<div class="section-label">04 · Insurance &amp; Coverage Patterns</div>
+<div class="story-banner">
+  Insurance coverage reveals a <strong>nuanced and sometimes counterintuitive story</strong>. Private insurance holders do not visit more frequently than the uninsured —
+  suggesting insurance type matters less than need. However, <strong>repatriation (freerepat) cardholders</strong> visit at nearly <strong>double the rate</strong> of those without,
+  reflecting their older age profile and higher chronic disease burden.
+  The free-poor scheme, surprisingly, shows the <em>lowest</em> visit rate — likely due to access barriers beyond cost.
+</div>
+
+<div class="charts-grid">
+
+  <!-- Chart 14: Insurance stacked bar -->
+  <div class="chart-card col-5">
+    <div class="card-title">14 · Insurance Coverage Mix</div>
+    <div class="card-story">Only <span>44.3%</span> hold private insurance. Repatriation (freerepat) covers <span>21%</span> and free-poor just <span>4.3%</span>. Many patients rely purely on public healthcare.</div>
+    <div class="chart-area" id="c-insurance" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 15: Visit rate by insurance -->
+  <div class="chart-card col-4">
+    <div class="card-title">15 · % Patients Visiting by Insurance Type</div>
+    <div class="card-story">Freerepat holders have the highest visit rate at <span>31.6%</span>. Freepoor holders have the lowest at <span>9.0%</span> — highlighting a major <span>access barrier</span> for the poorest patients.</div>
+    <div class="chart-area" id="c-ins-pct" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 16: Avg visits by insurance -->
+  <div class="chart-card col-3">
+    <div class="card-title">16 · Avg Visits by Insurance</div>
+    <div class="card-story">Freerepat average <span>0.467</span> vs freepoor at only <span>0.158</span>. Private insurance shows <span>no significant advantage</span> over uninsured.</div>
+    <div class="chart-area" id="c-ins-avg" style="height:280px;"></div>
+  </div>
+
+  <!-- Chart 17: Gender x private insurance -->
+  <div class="chart-card col-12">
+    <div class="card-title">17 · Avg Visits — Gender × Private Insurance</div>
+    <div class="card-story">Private insurance barely shifts male visit behaviour (0.237 vs 0.236), but for females, those <em>without</em> private insurance actually visit <span>slightly more</span> (0.380 vs 0.341) — suggesting need-driven utilisation dominates over insurance access effects.</div>
+    <div class="chart-area" id="c-gender-ins" style="height:260px;"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 5 — ACTIVITY & WELLBEING
+═══════════════════════════════════════════════ -->
+<div class="section-label">05 · Activity, Wellbeing &amp; Functional Impact</div>
+<div class="story-banner">
+  Activity-reduced days — the number of days a patient could not perform normal activities due to illness — serve as a <strong>powerful proxy for functional health burden</strong>.
+  As days increase, visit frequency rises sharply, though with notable volatility at higher day counts (small sample sizes).
+  Taken together with health scores, this paints a portrait of patients where <strong>functional impairment directly drives care-seeking behaviour</strong>.
+</div>
+
+<div class="charts-grid">
+
+  <!-- Chart 18: Reduced days line -->
+  <div class="chart-card col-8">
+    <div class="card-title">18 · Activity-Reduced Days vs Avg Doctor Visits</div>
+    <div class="card-story">Patients with <span>0 reduced days</span> average just <span>0.184</span> visits. Those with <span>10+ days</span> average <span>2.0–5.0</span> visits. The trend is strongly positive, with spikes at high day counts driven by small but severely ill subgroups.</div>
+    <div class="chart-area" id="c-reduced" style="height:300px;"></div>
+  </div>
+
+  <!-- Chart 19: Illness count donut -->
+  <div class="chart-card col-4">
+    <div class="card-title">19 · Illness Severity Distribution</div>
+    <div class="card-story">The largest group (<span>31.6%</span>) reports mild illness (score 1). Nearly <span>30%</span> report no illness. Severe illness (scores 4–5) affects <span>9.8%</span> of the population but drives disproportionate utilisation.</div>
+    <div class="chart-area" id="c-ill-pie" style="height:300px;"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SUMMARY INSIGHTS
+═══════════════════════════════════════════════ -->
+<div class="insight-strip">
+  <h3>🔍 Summary of Key Findings</h3>
+  <div class="insight-grid">
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-red"></span>Zero-Inflated Visit Pattern</div>
+      <div class="itext">79.8% of patients recorded zero doctor visits — a textbook zero-inflated count distribution. Standard OLS regression is inappropriate; zero-inflated Poisson or negative-binomial models are required for accurate modelling.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-amber"></span>Illness Severity is the #1 Driver</div>
+      <div class="itext">Severity-5 patients average 0.814 visits — 10× more than severity-0 (0.079). Every unit increase in illness severity raises the probability of visiting a doctor by ~15 percentage points.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-purple"></span>Chronic Conditions Compound Risk</div>
+      <div class="itext">Limiting chronic conditions raise visits by 130% over baseline. Non-limiting conditions still add 27%. When both health score and illness are high, patients average 0.852 visits — the highest subgroup.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-blue"></span>Gender Disparity is Structural</div>
+      <div class="itext">Female patients visit 53% more often than males. This gap is consistent across all insurance types and income brackets, suggesting it reflects genuine behavioural and biological differences rather than access effects.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-green"></span>Income Inversely Predicts Visits</div>
+      <div class="itext">Low-income patients (&lt;0.3) average 0.398 visits and are 63% more likely to visit than high-income patients — highlighting need-driven, not discretionary, utilisation among lower socioeconomic groups.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-teal"></span>Age Raises Utilisation Monotonically</div>
+      <div class="itext">The oldest cohort (scaled 0.72 ≈ 65+) averages 0.483 visits — 2.4× more than the youngest cohort (0.201). Ageing populations will place growing demand on healthcare systems.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-orange"></span>Activity Impairment Signals High Need</div>
+      <div class="itext">Patients with 10+ activity-reduced days average 2–5 visits. This metric is a strong proxy for functional burden and could serve as a screening flag for high-utilisation patients.</div>
+    </div>
+    <div class="insight-item">
+      <div class="ititle"><span class="dot dot-pink"></span>Freepoor Access Paradox</div>
+      <div class="itext">Despite being the most financially vulnerable group, freepoor holders have the lowest visit rate (9%) — suggesting non-financial barriers (geographic, cultural, awareness) remain even when cost is addressed.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>Healthcare Analytics for Doctor Visits · Dataset: Australian Health Survey · Made with IBM Bob</footer>
+
+<script>
+const DARK='#1a1f2e', GRID='#2d3748', TEXT='#94a3b8';
+const BLUE='#60a5fa', GREEN='#34d399', AMBER='#fbbf24', RED='#f87171';
+const PURPLE='#a78bfa', TEAL='#2dd4bf', ORANGE='#fb923c', PINK='#f472b6';
+const ROSE='#fb7185', SKY='#38bdf8';
+
+const TT = { backgroundColor:'#1e293b', borderColor:GRID, textStyle:{color:'#e2e8f0', fontSize:12} };
+function base() { return { backgroundColor:DARK, tooltip:{...TT}, grid:{left:'10%',right:'4%',top:'6%',bottom:'16%',containLabel:true} }; }
+
+const ALL_IDS = ['c-visits','c-cdf','c-gender','c-illness','c-ill-pct','c-chronic',
+  'c-health','c-heatmap','c-gender-visits','c-radar','c-gender-chronic','c-age',
+  'c-income','c-insurance','c-ins-pct','c-ins-avg','c-gender-ins','c-reduced','c-ill-pie'];
+
+// ── 1. Visits Distribution ──────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-visits'));
+  const colors = [RED,BLUE,BLUE,AMBER,AMBER,GREEN,GREEN,PURPLE,PURPLE,TEAL];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:['0','1','2','3','4','5','6','7','8','9'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`Visits: <b>${p.name}</b><br/>Patients: <b>${p.value.toLocaleString()}</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:42,
+      data:[4141,782,174,30,24,9,12,12,5,1].map((v,i)=>({value:v,itemStyle:{color:colors[i]}})),
+      label:{show:true,position:'top',color:TEXT,fontSize:10,formatter:p=>p.value>50?p.value.toLocaleString():''}}]
+  });
+})();
+
+// ── 2. CDF ──────────────────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-cdf'));
+  const visits=[0,1,2,3,4,5,6,7,8,9];
+  const cdf=[79.79,94.86,98.21,98.79,99.25,99.42,99.65,99.88,99.98,100.0];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:visits,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false},
+      name:'Visits',nameLocation:'middle',nameGap:26,nameTextStyle:{color:TEXT}},
+    yAxis:{type:'value',min:75,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,formatter:v=>v+'%'},
+      splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`≤${p.name} visits: <b>${p.value}%</b> of patients`,...TT},
+    series:[{type:'line',smooth:true,symbol:'circle',symbolSize:7,data:cdf,
+      lineStyle:{color:TEAL,width:3},itemStyle:{color:TEAL},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(45,212,191,0.3)'},{offset:1,color:'rgba(45,212,191,0.02)'}]}},
+      markLine:{silent:true,lineStyle:{color:'rgba(255,255,255,0.15)',type:'dashed'},
+        data:[{yAxis:95,label:{formatter:'95%',color:TEXT,fontSize:10}},{yAxis:99,label:{formatter:'99%',color:TEXT,fontSize:10}}]}}]
+  });
+})();
+
+// ── 3. Gender Donut ─────────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-gender'));
+  c.setOption({ backgroundColor:DARK,
+    tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)',...TT},
+    legend:{bottom:0,textStyle:{color:TEXT}},
+    series:[{type:'pie',radius:['42%','70%'],center:['50%','44%'],
+      label:{color:'#e2e8f0',fontSize:11},labelLine:{lineStyle:{color:GRID}},
+      data:[{value:2702,name:'Female',itemStyle:{color:PURPLE}},{value:2488,name:'Male',itemStyle:{color:BLUE}}]}]
+  });
+})();
+
+// ── 4. Illness severity line ─────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-illness'));
+  const d=[0.079,0.295,0.404,0.421,0.577,0.814];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:['0 – None','1','2','3','4','5 – Severe'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false}},
+    yAxis:{type:'value',name:'Avg Visits',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`Severity <b>${p.name}</b><br/>Avg Visits: <b>${p.value}</b>`,...TT},
+    series:[{type:'line',smooth:true,symbol:'circle',symbolSize:9,data:d,
+      lineStyle:{color:AMBER,width:3},itemStyle:{color:AMBER},
+      label:{show:true,position:'top',color:TEXT,fontSize:11},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(251,191,36,0.3)'},{offset:1,color:'rgba(251,191,36,0.02)'}]}}}]
+  });
+})();
+
+// ── 5. % visited by illness ─────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-ill-pct'));
+  const pct=[6.8,19.6,27.3,30.6,36.5,41.9];
+  const cols=[GREEN,TEAL,AMBER,AMBER,ORANGE,RED];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:['0','1','2','3','4','5'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false},
+      name:'Illness Severity',nameLocation:'middle',nameGap:26,nameTextStyle:{color:TEXT}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,formatter:v=>v+'%'},
+      splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`Severity <b>${p.name}</b><br/>% who visited: <b>${p.value}%</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:50,
+      data:pct.map((v,i)=>({value:v,itemStyle:{color:cols[i]}})),
+      label:{show:true,position:'top',color:TEXT,fontSize:11,formatter:p=>p.value+'%'}}]
+  });
+})();
+
+// ── 6. Chronic impact grouped bar ───────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-chronic'));
+  c.setOption({ ...base(),
+    legend:{data:['Without Condition','With Condition'],textStyle:{color:TEXT},bottom:0},
+    xAxis:{type:'category',data:['Non-Limiting\n(nchronic)','Limiting\n(lchronic)'],
+      axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:11},splitLine:{show:false}},
+    yAxis:{type:'value',max:0.75,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{trigger:'axis',...TT},
+    series:[
+      {name:'Without Condition',type:'bar',barMaxWidth:44,data:[0.272,0.262],itemStyle:{color:'#374151'},
+        label:{show:true,position:'top',color:TEXT,fontSize:10}},
+      {name:'With Condition',type:'bar',barMaxWidth:44,data:[0.346,0.603],itemStyle:{color:RED},
+        label:{show:true,position:'top',color:'#fca5a5',fontSize:10}}]
+  });
+})();
+
+// ── 7. Health Score Distribution ────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-health'));
+  const labels=['0','1','2','3','4','5','6','7','8','9','10','11','12'];
+  const counts=[3026,823,446,273,187,132,104,61,42,32,21,24,19];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:labels,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false},
+      name:'Health Score (0 = Best)',nameLocation:'middle',nameGap:26,nameTextStyle:{color:TEXT}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`Score <b>${p.name}</b><br/>Patients: <b>${p.value.toLocaleString()}</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:32,
+      data:counts.map((v,i)=>({value:v,itemStyle:{color:i===0?GREEN:i<=3?TEAL:i<=6?AMBER:RED}}))}]
+  });
+})();
+
+// ── 8. Heatmap Health × Illness ─────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-heatmap'));
+  // rows: health bucket, cols: illness bucket, value: avg visits
+  const data=[
+    [0,0,0.129],[0,1,0.364],[0,2,0.598],
+    [1,0,0.285],[1,1,0.370],[1,2,0.607],
+    [2,0,0.507],[2,1,0.623],[2,2,0.852]
+  ];
+  const hLabels=['Health: Low (0)','Health: Mid (1–3)','Health: High (4+)'];
+  const iLabels=['Illness: Mild (0–1)','Illness: Mod (2–3)','Illness: Sev (4–5)'];
+  c.setOption({ backgroundColor:DARK,
+    tooltip:{formatter:p=>{const d=p.data;return `${hLabels[d[0]]} × ${iLabels[d[1]]}<br/>Avg Visits: <b>${d[2]}</b>`;},...TT},
+    grid:{left:'22%',right:'12%',top:'8%',bottom:'18%'},
+    xAxis:{type:'category',data:iLabels,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:11},splitLine:{show:false}},
+    yAxis:{type:'category',data:hLabels,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:11},splitLine:{show:false}},
+    visualMap:{min:0,max:0.9,calculable:true,orient:'horizontal',left:'center',bottom:0,
+      inRange:{color:['#1e293b','#1d4ed8','#fbbf24','#ef4444']},textStyle:{color:TEXT},precision:2},
+    series:[{type:'heatmap',data:data,label:{show:true,color:'#fff',fontSize:13,fontWeight:'bold',formatter:p=>p.data[2]},
+      itemStyle:{borderWidth:3,borderColor:'#0f1117'}}]
+  });
+})();
+
+// ── 9. Gender avg visits ─────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-gender-visits'));
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:['Male','Female'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:13},splitLine:{show:false}},
+    yAxis:{type:'value',max:0.45,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`<b>${p.name}</b><br/>Avg Visits: <b>${p.value}</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:72,
+      data:[{value:0.236,itemStyle:{color:BLUE}},{value:0.362,itemStyle:{color:PURPLE}}],
+      label:{show:true,position:'top',color:'#e2e8f0',fontSize:14,fontWeight:'bold'}}]
+  });
+})();
+
+// ── 10. Radar ────────────────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-radar'));
+  c.setOption({ backgroundColor:DARK,
+    tooltip:{...TT},
+    legend:{data:['Male','Female'],bottom:0,textStyle:{color:TEXT}},
+    radar:{radius:'62%',center:['50%','48%'],
+      indicator:[
+        {name:'Illness',max:2},{name:'Reduced Days',max:1.2},{name:'Health Score',max:1.5},
+        {name:'Visits',max:0.5},{name:'Income',max:0.8},{name:'Age',max:0.55}
+      ],
+      axisLine:{lineStyle:{color:'#2d3748'}},splitLine:{lineStyle:{color:'#1e293b'}},
+      splitArea:{areaStyle:{color:['rgba(255,255,255,0.02)','rgba(255,255,255,0.01)']}},
+      name:{textStyle:{color:TEXT,fontSize:11}}},
+    series:[{type:'radar',
+      data:[
+        {name:'Male',value:[1.238,0.738,1.09,0.236,0.689,0.346],
+          lineStyle:{color:BLUE,width:2},itemStyle:{color:BLUE},areaStyle:{color:'rgba(96,165,250,0.15)'}},
+        {name:'Female',value:[1.611,0.976,1.335,0.362,0.485,0.462],
+          lineStyle:{color:PURPLE,width:2},itemStyle:{color:PURPLE},areaStyle:{color:'rgba(167,139,250,0.15)'}}
+      ]}]
+  });
+})();
+
+// ── 11. Gender × Chronic ─────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-gender-chronic'));
+  const cats=['F: No Chronic','F: nchronic','F: lchronic','M: No Chronic','M: nchronic','M: lchronic'];
+  const vals=[0.235,0.381,0.694,0.159,0.290,0.487];
+  const cols=[PURPLE,'#c084fc','#9333ea',BLUE,'#3b82f6','#1d4ed8'];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:9,rotate:15},splitLine:{show:false}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`<b>${p.name}</b><br/>Avg Visits: <b>${p.value}</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:38,
+      data:vals.map((v,i)=>({value:v,itemStyle:{color:cols[i]}})),
+      label:{show:true,position:'top',color:TEXT,fontSize:10}}]
+  });
+})();
+
+// ── 12. Age dual axis ────────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-age'));
+  const ages=['0.19','0.22','0.27','0.32','0.37','0.42','0.47','0.52','0.57','0.62','0.67','0.72'];
+  const avgs=[0.213,0.201,0.258,0.243,0.247,0.317,0.271,0.414,0.399,0.354,0.378,0.483];
+  const cnts=[752,1213,523,301,146,126,181,222,273,316,315,822];
+  c.setOption({ ...base(),
+    legend:{data:['Avg Visits','Patient Count'],textStyle:{color:TEXT},bottom:0},
+    xAxis:{type:'category',data:ages,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false}},
+    yAxis:[
+      {type:'value',name:'Avg Visits',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+      {type:'value',name:'Count',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false}}],
+    tooltip:{trigger:'axis',...TT},
+    series:[
+      {name:'Avg Visits',type:'line',smooth:true,symbol:'circle',symbolSize:7,data:avgs,
+        lineStyle:{color:TEAL,width:3},itemStyle:{color:TEAL},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(45,212,191,0.25)'},{offset:1,color:'rgba(45,212,191,0.02)'}]}}},
+      {name:'Patient Count',type:'bar',yAxisIndex:1,data:cnts,barMaxWidth:28,itemStyle:{color:'rgba(255,255,255,0.07)'}}]
+  });
+})();
+
+// ── 13. Income bracket ───────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-income'));
+  c.setOption({ backgroundColor:DARK,
+    tooltip:{trigger:'axis',...TT},
+    legend:{data:['Avg Visits','% Who Visited'],textStyle:{color:TEXT},bottom:0},
+    grid:{left:'12%',right:'14%',top:'8%',bottom:'20%',containLabel:true},
+    xAxis:{type:'category',data:['Low (<0.3)','Mid (0.3–0.7)','High (≥0.7)'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:10},splitLine:{show:false}},
+    yAxis:[
+      {type:'value',name:'Avg Visits',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+      {type:'value',name:'% Visited',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,formatter:v=>v+'%'},splitLine:{show:false}}],
+    series:[
+      {name:'Avg Visits',type:'bar',barMaxWidth:44,data:[{value:0.398,itemStyle:{color:RED}},{value:0.290,itemStyle:{color:AMBER}},{value:0.224,itemStyle:{color:GREEN}}],
+        label:{show:true,position:'top',color:TEXT,fontSize:10}},
+      {name:'% Who Visited',type:'line',yAxisIndex:1,smooth:true,symbol:'diamond',symbolSize:9,data:[25.6,19.7,15.7],
+        lineStyle:{color:ORANGE,width:2.5},itemStyle:{color:ORANGE},
+        label:{show:true,position:'top',color:ORANGE,fontSize:10,formatter:p=>p.value+'%'}}]
+  });
+})();
+
+// ── 14. Insurance stacked ────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-insurance'));
+  c.setOption({ ...base(),
+    legend:{data:['Has Coverage','No Coverage'],textStyle:{color:TEXT},bottom:0},
+    xAxis:{type:'category',data:['Private','Free (Poor)','Free (Repat)'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{trigger:'axis',...TT},
+    series:[
+      {name:'Has Coverage',type:'bar',stack:'t',data:[2298,222,1091],itemStyle:{color:GREEN},barMaxWidth:56},
+      {name:'No Coverage',type:'bar',stack:'t',data:[2892,4968,4099],itemStyle:{color:'#2d3748'},barMaxWidth:56}]
+  });
+})();
+
+// ── 15. % visiting by insurance ──────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-ins-pct'));
+  const cats=['Private=Yes','Private=No','FreePoor=Yes','FreePoor=No','FreeRepat=Yes','FreeRepat=No'];
+  const vals=[20.0,20.4,9.0,20.7,31.6,17.2];
+  const cols=[BLUE,BLUE,RED,GREEN,TEAL,GREEN];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:9,rotate:12},splitLine:{show:false}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,formatter:v=>v+'%'},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`<b>${p.name}</b><br/>% who visited: <b>${p.value}%</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:40,
+      data:vals.map((v,i)=>({value:v,itemStyle:{color:cols[i]}})),
+      label:{show:true,position:'top',color:TEXT,fontSize:10,formatter:p=>p.value+'%'}}]
+  });
+})();
+
+// ── 16. Avg visits by insurance ──────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-ins-avg'));
+  const cats=['Freepoor\n=Yes','Freerepat\n=Yes','Private\n=Yes','Private\n=No','Freerepat\n=No','Freepoor\n=No'];
+  const vals=[0.158,0.467,0.295,0.307,0.258,0.308];
+  const cols=[RED,TEAL,BLUE,SKY,GREEN,GREEN];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:cats,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:10},splitLine:{show:false}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`<b>${p.name}</b><br/>Avg Visits: <b>${p.value}</b>`,...TT},
+    series:[{type:'bar',barMaxWidth:36,
+      data:vals.map((v,i)=>({value:v,itemStyle:{color:cols[i]}})),
+      label:{show:true,position:'top',color:TEXT,fontSize:10}}]
+  });
+})();
+
+// ── 17. Gender × Private Insurance ──────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-gender-ins'));
+  c.setOption({ ...base(),
+    legend:{data:['Male','Female'],textStyle:{color:TEXT},bottom:0},
+    xAxis:{type:'category',data:['Private = Yes','Private = No'],axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT,fontSize:12},splitLine:{show:false}},
+    yAxis:{type:'value',max:0.45,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{trigger:'axis',...TT},
+    series:[
+      {name:'Male',type:'bar',barMaxWidth:60,data:[{value:0.237,itemStyle:{color:BLUE}},{value:0.236,itemStyle:{color:SKY}}],
+        label:{show:true,position:'top',color:TEXT,fontSize:11}},
+      {name:'Female',type:'bar',barMaxWidth:60,data:[{value:0.341,itemStyle:{color:PURPLE}},{value:0.380,itemStyle:{color:PINK}}],
+        label:{show:true,position:'top',color:TEXT,fontSize:11}}]
+  });
+})();
+
+// ── 18. Reduced Days ─────────────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-reduced'));
+  const days=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const avgs=[0.184,0.356,0.574,1.095,0.800,1.275,1.176,1.184,1.176,1.714,2.000,5.000,2.000,4.000,1.548];
+  c.setOption({ ...base(),
+    xAxis:{type:'category',data:days,axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{show:false},
+      name:'Activity-Reduced Days',nameLocation:'middle',nameGap:28,nameTextStyle:{color:TEXT}},
+    yAxis:{type:'value',name:'Avg Visits',nameTextStyle:{color:TEXT},axisLine:{lineStyle:{color:GRID}},axisLabel:{color:TEXT},splitLine:{lineStyle:{color:GRID,type:'dashed'}}},
+    tooltip:{formatter:p=>`Reduced Days: <b>${p.name}</b><br/>Avg Visits: <b>${p.value}</b>`,...TT},
+    series:[{type:'line',smooth:false,symbol:'circle',symbolSize:7,data:avgs,
+      lineStyle:{color:ORANGE,width:2.5},itemStyle:{color:ORANGE},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(251,146,60,0.3)'},{offset:1,color:'rgba(251,146,60,0.02)'}]}},
+      markPoint:{data:[{type:'max',label:{color:'#fff',fontSize:11},itemStyle:{color:RED}}]}}]
+  });
+})();
+
+// ── 19. Illness severity pie ─────────────────────────
+(function(){
+  const c = echarts.init(document.getElementById('c-ill-pie'));
+  c.setOption({ backgroundColor:DARK,
+    tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)',...TT},
+    legend:{bottom:0,textStyle:{color:TEXT},orient:'horizontal'},
+    series:[{type:'pie',radius:['38%','65%'],center:['50%','44%'],
+      label:{color:'#e2e8f0',fontSize:10},labelLine:{lineStyle:{color:GRID}},
+      data:[
+        {value:1554,name:'0 – None',   itemStyle:{color:GREEN}},
+        {value:1638,name:'1 – Mild',   itemStyle:{color:TEAL}},
+        {value:946, name:'2',          itemStyle:{color:AMBER}},
+        {value:542, name:'3',          itemStyle:{color:ORANGE}},
+        {value:274, name:'4',          itemStyle:{color:RED}},
+        {value:236, name:'5 – Severe', itemStyle:{color:'#dc2626'}}
+      ]}]
+  });
+})();
+
+// ── Resize all ───────────────────────────────────────
+window.addEventListener('resize', () => {
+  ALL_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) echarts.getInstanceByDom(el)?.resize();
+  });
+});
+</script>
+</body>
+</html>

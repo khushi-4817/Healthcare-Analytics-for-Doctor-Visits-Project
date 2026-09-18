@@ -1,0 +1,88 @@
+# ----------------------------------------------
+# Healthcare Analytics - Doctor Visits Project
+# .gitignore
+# ----------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Data & Outputs (uncomment to exclude raw data)
+# *.csv
+# *.xlsx
+
+# Generated model artefacts
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.parquet
+*.feather
+
+# Exported reports / figures
+reports/
+figures/
+output/
+outputs/
+exports/
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs & Temp
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Secrets / Credentials
+.env
+.env.*
+secrets.json
+credentials.json
+
+# Node / Front-end
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bob internal
+.bob/
