@@ -166,6 +166,7 @@ jupyter notebook Healthcare_Analytics_for_Doctor_Visits.ipynb
 ```
 
 ### View the dashboard
+[📊 View Dashboard](dashboard.html)
 Open `dashboard.html` directly in any browser — no server required.
 
 ---
