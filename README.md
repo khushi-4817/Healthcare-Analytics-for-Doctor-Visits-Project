@@ -186,7 +186,7 @@ Open `dashboard.html` directly in any browser — no server required.
 ## 👤 Author
 
 **Khushi Wanjari**  
-TIRTC Healthcare Analytics Project  
+Healthcare Analytics Project  
 
 ---
 
